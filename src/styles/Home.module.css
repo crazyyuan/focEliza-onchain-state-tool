@@ -1,0 +1,274 @@
+.container {
+  padding: 0 2rem;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background-color: #f9f9f9;
+}
+
+.main {
+  flex: 1;
+  padding: 2rem 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.footer {
+  display: flex;
+  padding: 1.5rem 0;
+  border-top: 1px solid #eaeaea;
+  justify-content: center;
+  align-items: center;
+  font-size: 0.9rem;
+  color: #666;
+  margin-top: 2rem;
+}
+
+.title {
+  margin: 1rem 0;
+  line-height: 1.15;
+  font-size: 2.5rem;
+  text-align: center;
+  color: #333;
+}
+
+.description {
+  text-align: center;
+  margin-bottom: 2rem;
+  font-size: 1.2rem;
+  color: #666;
+}
+
+.connectButton {
+  margin-bottom: 2rem;
+}
+
+.connectPrompt {
+  margin: 2rem 0;
+  padding: 2rem;
+  text-align: center;
+  background-color: #f0f0f0;
+  border-radius: 10px;
+  width: 100%;
+  max-width: 600px;
+}
+
+.dashboard {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+  align-items: center;
+}
+
+.card {
+  padding: 1.5rem;
+  text-align: left;
+  color: inherit;
+  background-color: white;
+  border: 1px solid #eaeaea;
+  border-radius: 10px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  width: 100%;
+  max-width: 800px;
+  transition: all 0.3s ease;
+}
+
+.card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+}
+
+.cardTitle {
+  margin: 0 0 1.5rem 0;
+  font-size: 1.5rem;
+  color: #333;
+  border-bottom: 2px solid #0070f3;
+  padding-bottom: 0.5rem;
+  display: inline-block;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin: 1rem 0;
+}
+
+.formRow {
+  display: flex;
+  flex-direction: row;
+  gap: 1rem;
+  margin-bottom: 1rem;
+  width: 100%;
+}
+
+.form input, .envRow input {
+  padding: 0.75rem;
+  border: 1px solid #eaeaea;
+  border-radius: 4px;
+  font-size: 1rem;
+  width: 100%;
+  transition: border-color 0.3s ease;
+}
+
+.form input:focus, .envRow input:focus, .select:focus {
+  outline: none;
+  border-color: #0070f3;
+  box-shadow: 0 0 0 2px rgba(0, 112, 243, 0.2);
+}
+
+.select {
+  padding: 0.75rem;
+  border-radius: 4px;
+  border: 1px solid #eaeaea;
+  font-size: 1rem;
+  width: 100%;
+  background-color: white;
+  transition: border-color 0.3s ease;
+  cursor: pointer;
+}
+
+.form button, .actionButton {
+  padding: 0.75rem;
+  background-color: #0070f3;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 1rem;
+  font-weight: 500;
+  transition: background-color 0.3s ease;
+}
+
+.form button:hover, .actionButton:hover {
+  background-color: #005bb5;
+}
+
+.form button:disabled, .actionButton:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.cancelButton {
+  padding: 0.75rem;
+  background-color: #f5f5f5;
+  color: #333;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 1rem;
+  font-weight: 500;
+  transition: background-color 0.3s ease;
+}
+
+.cancelButton:hover {
+  background-color: #e5e5e5;
+}
+
+.cancelButton:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.envSection {
+  margin-top: 1.5rem;
+  border-top: 1px solid #eaeaea;
+  padding-top: 1.5rem;
+}
+
+.sectionTitle {
+  margin: 0 0 1rem 0;
+  font-size: 1.2rem;
+  color: #555;
+}
+
+.envRow {
+  display: flex;
+  flex-direction: row;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+  align-items: center;
+}
+
+.envRow button {
+  padding: 0.5rem 0.75rem;
+  background-color: #ff4d4f;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: background-color 0.3s ease;
+  flex-shrink: 0;
+}
+
+.envRow button:hover {
+  background-color: #ff7875;
+}
+
+.buttonGroup {
+  display: flex;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.addButton {
+  padding: 0.6rem 1rem;
+  background-color: #52c41a;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 500;
+  transition: background-color 0.3s ease;
+}
+
+.addButton:hover {
+  background-color: #73d13d;
+}
+
+.info {
+  margin-top: 1rem;
+  padding: 1rem;
+  background-color: #f9f9f9;
+  border-radius: 4px;
+  overflow: auto;
+  border: 1px solid #eaeaea;
+}
+
+.info pre {
+  margin: 0;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  font-family: monospace;
+  font-size: 0.9rem;
+}
+
+@media (max-width: 768px) {
+  .container {
+    padding: 0 1rem;
+  }
+  
+  .card {
+    padding: 1rem;
+  }
+  
+  .title {
+    font-size: 2rem;
+  }
+  
+  .formRow, .envRow {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  
+  .buttonGroup {
+    flex-direction: column;
+  }
+}

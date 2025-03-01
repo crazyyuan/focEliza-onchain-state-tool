@@ -1,0 +1,33 @@
+{
+    "name": "onchain-state-tool",
+    "private": true,
+    "version": "0.1.0",
+    "scripts": {
+        "dev": "next dev --turbo",
+        "build": "next build",
+        "start": "next start",
+        "format": "run-s prettier lint:fix tsc",
+        "prettier": "prettier --write 'src/**/*.{ts,tsx}'",
+        "lint:fix": "next lint -d src --no-cache --fix",
+        "tsc": "tsc --noEmit"
+    },
+    "dependencies": {
+        "@rainbow-me/rainbowkit": "^2.2.3",
+        "@tanstack/react-query": "^5.55.3",
+        "eslint-config-prettier": "^9.0.0",
+        "eslint-plugin-prettier": "^5.0.0",
+        "next": "^15.1.4",
+        "pinata-web3": "0.5.4",
+        "prettier": "3.4.1",
+        "react": "^19.0.0",
+        "react-dom": "^19.0.0",
+        "viem": "2.23.5",
+        "wagmi": "^2.14.12",
+        "sonner": "^1.7.1"
+    },
+    "devDependencies": {
+        "@types/node": "^20.14.8",
+        "@types/react": "^19.0.6",
+        "typescript": "5.5.2"
+    }
+}
