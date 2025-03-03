@@ -1,0 +1,30 @@
+{
+  "name": "Agent Name",
+  "description": "A detailed description of the agent",
+  "image": "https://example.com/image.png",
+  "external_url": "https://example.com",
+  "attributes": [
+    {
+      "trait_type": "Category",
+      "value": "AI Assistant"
+    },
+    {
+      "trait_type": "Specialization",
+      "value": "General Knowledge"
+    },
+    {
+      "trait_type": "Language",
+      "value": "English"
+    }
+  ],
+  "capabilities": [
+    "text-generation",
+    "question-answering",
+    "information-retrieval"
+  ],
+  "metadata": {
+    "version": "1.0.0",
+    "created_at": "2025-03-03T14:50:53+08:00",
+    "updated_at": "2025-03-03T14:50:53+08:00"
+  }
+}

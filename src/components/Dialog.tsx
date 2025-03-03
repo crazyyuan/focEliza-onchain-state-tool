@@ -1,5 +1,5 @@
-import React, { ReactNode, useEffect, useRef } from 'react';
-import styles from './Dialog.module.css';
+import React, { ReactNode, useEffect, useRef } from "react";
+import styles from "./Dialog.module.css";
 
 interface DialogProps {
   open: boolean;
@@ -24,27 +24,30 @@ export const Dialog: React.FC<DialogProps> = ({ open, onClose, children }) => {
 
   useEffect(() => {
     const handleEscape = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') {
+      if (event.key === "Escape") {
         onClose();
       }
     };
 
     const handleClickOutside = (event: MouseEvent) => {
-      if (dialogRef.current && !dialogRef.current.contains(event.target as Node)) {
+      if (
+        dialogRef.current &&
+        !dialogRef.current.contains(event.target as Node)
+      ) {
         onClose();
       }
     };
 
     if (open) {
-      document.addEventListener('keydown', handleEscape);
-      document.addEventListener('mousedown', handleClickOutside);
-      document.body.style.overflow = 'hidden'; // Prevent scrolling when dialog is open
+      document.addEventListener("keydown", handleEscape);
+      document.addEventListener("mousedown", handleClickOutside);
+      document.body.style.overflow = "hidden"; // Prevent scrolling when dialog is open
     }
 
     return () => {
-      document.removeEventListener('keydown', handleEscape);
-      document.removeEventListener('mousedown', handleClickOutside);
-      document.body.style.overflow = ''; // Restore scrolling when dialog is closed
+      document.removeEventListener("keydown", handleEscape);
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.body.style.overflow = ""; // Restore scrolling when dialog is closed
     };
   }, [open, onClose]);
 

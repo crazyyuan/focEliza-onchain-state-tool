@@ -11,15 +11,15 @@ import { config } from "../wagmi";
 const client = new QueryClient();
 
 function MyApp({ Component, pageProps }: AppProps) {
-    return (
-        <WagmiProvider config={config}>
-            <QueryClientProvider client={client}>
-                <RainbowKitProvider>
-                    <Component {...pageProps} />
-                </RainbowKitProvider>
-            </QueryClientProvider>
-        </WagmiProvider>
-    );
+  return (
+    <WagmiProvider config={config}>
+      <QueryClientProvider client={client}>
+        <RainbowKitProvider>
+          <Component {...pageProps} />
+        </RainbowKitProvider>
+      </QueryClientProvider>
+    </WagmiProvider>
+  );
 }
 
 export default MyApp;

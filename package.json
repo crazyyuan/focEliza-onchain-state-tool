@@ -14,18 +14,21 @@
     "dependencies": {
         "@rainbow-me/rainbowkit": "^2.2.3",
         "@tanstack/react-query": "^5.55.3",
+        "axios": "^1.8.1",
         "eslint-config-prettier": "^9.0.0",
         "eslint-plugin-prettier": "^5.0.0",
+        "formidable": "^3.5.2",
         "next": "^15.1.4",
         "pinata-web3": "0.5.4",
         "prettier": "3.4.1",
         "react": "^19.0.0",
         "react-dom": "^19.0.0",
+        "sonner": "^1.7.1",
         "viem": "2.23.5",
-        "wagmi": "^2.14.12",
-        "sonner": "^1.7.1"
+        "wagmi": "^2.14.12"
     },
     "devDependencies": {
+        "@types/formidable": "^3.4.5",
         "@types/node": "^20.14.8",
         "@types/react": "^19.0.6",
         "typescript": "5.5.2"
