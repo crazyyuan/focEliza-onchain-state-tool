@@ -78,10 +78,10 @@
   transition: all 0.3s ease;
 }
 
-.card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
-}
+/*.card:hover {*/
+/*  transform: translateY(-5px);*/
+/*  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);*/
+/*}*/
 
 .cardTitle {
   margin: 0 0 1.5rem 0;
@@ -260,6 +260,23 @@
 .uploadButton:disabled {
   background-color: #bfbfbf;
   cursor: not-allowed;
+}
+
+.manageButton {
+  padding: 0.5rem 1rem;
+  background-color: #1890ff;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 500;
+  transition: background-color 0.3s ease;
+  margin-bottom: 1rem;
+}
+
+.manageButton:hover {
+  background-color: #096dd9;
 }
 
 .previewLink {
@@ -509,25 +526,184 @@
   font-size: 0.9rem;
 }
 
+.envDisplaySection {
+  margin-bottom: 1rem;
+  padding: 1rem;
+  background-color: #f8f9fa;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.envTable {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 1rem;
+  border: 1px solid #e8e8e8;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.envTableHeader {
+  display: flex;
+  background-color: #f0f0f0;
+  font-weight: 600;
+  border-bottom: 2px solid #e8e8e8;
+}
+
+.envTableRow {
+  display: flex;
+  border-bottom: 1px solid #e8e8e8;
+}
+
+.envTableRow:last-child {
+  border-bottom: none;
+}
+
+.envTableCell {
+  flex: 1;
+  padding: 0.75rem 1rem;
+  word-break: break-word;
+}
+
+.envTableRow:hover {
+  background-color: #f5f5f5;
+}
+
+.loadingIndicator {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100px;
+  font-style: italic;
+  color: #888;
+}
+
+.noEnvsMessage {
+  padding: 1rem;
+  color: #666;
+  font-style: italic;
+  text-align: center;
+}
+
+.removeButton {
+  padding: 0.5rem;
+  background-color: #ff4d4f;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: background-color 0.3s ease;
+  flex-shrink: 0;
+}
+
+.removeButton:hover {
+  background-color: #ff7875;
+}
+
+.modalOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  animation: fadeIn 0.2s ease-in-out;
+}
+
+.modal {
+  background-color: white;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  width: 90%;
+  max-width: 800px;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  animation: slideIn 0.3s ease-in-out;
+}
+
+.modalHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 1.5rem;
+  border-bottom: 1px solid #f0f0f0;
+  position: sticky;
+  top: 0;
+  background-color: white;
+  border-radius: 8px 8px 0 0;
+  z-index: 10;
+}
+
+.modalHeader h2 {
+  margin: 0;
+  font-size: 1.25rem;
+  color: #333;
+}
+
+.modalContent {
+  padding: 1.5rem;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.closeButton {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  cursor: pointer;
+  color: #999;
+  transition: color 0.2s;
+}
+
+.closeButton:hover {
+  color: #333;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideIn {
+  from { transform: translateY(20px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
 @media (max-width: 768px) {
   .container {
     padding: 0 1rem;
   }
-  
+
   .card {
     padding: 1rem;
   }
-  
+
   .title {
     font-size: 2rem;
   }
-  
+
   .formRow, .envRow {
     flex-direction: column;
     gap: 0.5rem;
   }
-  
+
   .buttonGroup {
     flex-direction: column;
+  }
+
+  .modal {
+    width: 95%;
+    max-height: 95vh;
+  }
+
+  .envTableCell {
+    padding: 0.5rem;
+    font-size: 0.9rem;
   }
 }

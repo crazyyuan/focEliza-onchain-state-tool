@@ -15,6 +15,8 @@ import { fetchFromIpfs, ipfsUriToGatewayUrl } from "../utils/ipfs";
 import apiClient from "../utils/apiClient";
 import CharacterTemplateLink from "../components/CharacterTemplateLink";
 import CopyEnvButton from "../components/CopyEnvButton";
+import SpaceEnvDialog from "../components/SpaceEnvDialog";
+import AgentEnvDialog from "../components/AgentEnvDialog";
 
 import {
   Dialog,
@@ -60,6 +62,8 @@ const Home: NextPage = () => {
 
   const [isRegisterDialogOpen, setIsRegisterDialogOpen] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
+  const [isSpaceEnvDialogOpen, setIsSpaceEnvDialogOpen] = useState(false);
+  const [isAgentEnvDialogOpen, setIsAgentEnvDialogOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -416,7 +420,7 @@ const Home: NextPage = () => {
       <Head>
         <title>Eliza Agent Registry</title>
         <meta name="description" content="Eliza Agent Registry DApp" />
-        <link href="/favicon.ico" rel="icon" />
+        {/*<link href="/favicon.ico" rel="icon" />*/}
       </Head>
 
       <Toaster />
@@ -476,38 +480,12 @@ const Home: NextPage = () => {
 
                 <div className={styles.envSection}>
                   <h3 className={styles.sectionTitle}>Environment Variables</h3>
-                  {envs.map((env, index) => (
-                    <div key={index} className={styles.envRow}>
-                      <input
-                        type="text"
-                        placeholder="Key"
-                        value={env.key}
-                        onChange={(e) =>
-                          handleEnvChange(index, e.target.value, env.value)
-                        }
-                      />
-                      <input
-                        type="text"
-                        placeholder="Value"
-                        value={env.value}
-                        onChange={(e) =>
-                          handleEnvChange(index, env.key, e.target.value)
-                        }
-                      />
-                      <button onClick={() => handleRemoveEnv(index)}>
-                        Remove
-                      </button>
-                    </div>
-                  ))}
                   <div className={styles.buttonGroup}>
-                    <button className={styles.addButton} onClick={handleAddEnv}>
-                      Add Env
-                    </button>
                     <button
-                      className={styles.actionButton}
-                      onClick={handleSetSpaceEnvs}
+                      className={styles.manageButton}
+                      onClick={() => setIsSpaceEnvDialogOpen(true)}
                     >
-                      Set Space Envs
+                      Manage Envs
                     </button>
                   </div>
                 </div>
@@ -522,7 +500,9 @@ const Home: NextPage = () => {
                     value={selectedAgent?.id || ""}
                     onChange={(e) => {
                       const selectedId = e.target.value;
-                      const agent = agents.find((agent) => agent.id === selectedId);
+                      const agent = agents.find(
+                        (agent) => agent.id === selectedId,
+                      );
                       setSelectedAgent(agent || null);
                     }}
                     className={styles.select}
@@ -569,9 +549,9 @@ const Home: NextPage = () => {
                         </span>
                       </div>
                     )}
-                    <CopyEnvButton 
-                      selectedSpace={selectedAgent.space} 
-                      selectedAgentId={selectedAgent.id} 
+                    <CopyEnvButton
+                      selectedSpace={selectedAgent.space}
+                      selectedAgentId={selectedAgent.id}
                     />
                     {/*{selectedAgent.characterData && (*/}
                     {/*  <div className={styles.characterDataSection}>*/}
@@ -588,38 +568,12 @@ const Home: NextPage = () => {
 
                 <div className={styles.envSection}>
                   <h3 className={styles.sectionTitle}>Environment Variables</h3>
-                  {envs.map((env, index) => (
-                    <div key={index} className={styles.envRow}>
-                      <input
-                        type="text"
-                        placeholder="Key"
-                        value={env.key}
-                        onChange={(e) =>
-                          handleEnvChange(index, e.target.value, env.value)
-                        }
-                      />
-                      <input
-                        type="text"
-                        placeholder="Value"
-                        value={env.value}
-                        onChange={(e) =>
-                          handleEnvChange(index, env.key, e.target.value)
-                        }
-                      />
-                      <button onClick={() => handleRemoveEnv(index)}>
-                        Remove
-                      </button>
-                    </div>
-                  ))}
                   <div className={styles.buttonGroup}>
-                    <button className={styles.addButton} onClick={handleAddEnv}>
-                      Add Env
-                    </button>
                     <button
-                      className={styles.actionButton}
-                      onClick={handleSetAgentEnvs}
+                      className={styles.manageButton}
+                      onClick={() => setIsAgentEnvDialogOpen(true)}
                     >
-                      Set Agent Envs
+                      Manage Envs
                     </button>
                   </div>
                 </div>
@@ -636,6 +590,28 @@ const Home: NextPage = () => {
       <footer className={styles.footer}>
         <p>Eliza Agent Registry &copy; {new Date().getFullYear()}</p>
       </footer>
+
+      <SpaceEnvDialog
+        isOpen={isSpaceEnvDialogOpen}
+        onClose={() => setIsSpaceEnvDialogOpen(false)}
+        selectedSpace={selectedSpace}
+        envs={envs}
+        handleEnvChange={handleEnvChange}
+        handleRemoveEnv={handleRemoveEnv}
+        handleAddEnv={handleAddEnv}
+        handleSetSpaceEnvs={handleSetSpaceEnvs}
+      />
+
+      <AgentEnvDialog
+        isOpen={isAgentEnvDialogOpen}
+        onClose={() => setIsAgentEnvDialogOpen(false)}
+        selectedAgent={selectedAgent}
+        envs={envs}
+        handleEnvChange={handleEnvChange}
+        handleRemoveEnv={handleRemoveEnv}
+        handleAddEnv={handleAddEnv}
+        handleSetAgentEnvs={handleSetAgentEnvs}
+      />
 
       <Dialog open={isRegisterDialogOpen} onClose={closeRegisterDialog}>
         <DialogTitle>Register New Agent</DialogTitle>
