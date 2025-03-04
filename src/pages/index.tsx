@@ -14,6 +14,7 @@ import { waitForTransactionReceipt } from "@wagmi/core";
 import { fetchFromIpfs, ipfsUriToGatewayUrl } from "../utils/ipfs";
 import apiClient from "../utils/apiClient";
 import CharacterTemplateLink from "../components/CharacterTemplateLink";
+import CopyEnvButton from "../components/CopyEnvButton";
 
 import {
   Dialog,
@@ -520,10 +521,9 @@ const Home: NextPage = () => {
                   <select
                     value={selectedAgent?.id || ""}
                     onChange={(e) => {
-                      const one = agents.find((agent) => {
-                        e.target.value === agent.id;
-                      });
-                      setSelectedAgent(one || null);
+                      const selectedId = e.target.value;
+                      const agent = agents.find((agent) => agent.id === selectedId);
+                      setSelectedAgent(agent || null);
                     }}
                     className={styles.select}
                   >
@@ -569,6 +569,10 @@ const Home: NextPage = () => {
                         </span>
                       </div>
                     )}
+                    <CopyEnvButton 
+                      selectedSpace={selectedAgent.space} 
+                      selectedAgentId={selectedAgent.id} 
+                    />
                     {/*{selectedAgent.characterData && (*/}
                     {/*  <div className={styles.characterDataSection}>*/}
                     {/*    <h4 className={styles.subSectionTitle}>*/}

@@ -8,9 +8,32 @@ First, run the development server:
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3456](http://localhost:3456) with your browser to see the result.
 
 You can start editing the page by modifying `pages/index.tsx`. The page auto-updates as you edit the file.
+
+### Custom Port Configuration
+
+By default, the application runs on port 3456. You can change this in several ways:
+
+1. **Using environment variables**: Set the `PORT` variable in your `.env.local` file:
+   ```
+   PORT=4000
+   ```
+
+2. **Using custom npm scripts**:
+   ```bash
+   # Run on the default port (3456)
+   npm run dev
+   
+   # Run on the standard Next.js port (3000)
+   npm run dev:default
+   
+   # Run on a custom port
+   npm run dev:custom 5000
+   ```
+
+3. **Directly in package.json**: Edit the port number in the `dev` and `start` scripts.
 
 ## Environment Variables
 
@@ -20,11 +43,11 @@ Create a `.env.local` file in the root directory with the following variables:
 NEXT_PUBLIC_PROJECT_ID=your_wallet_connect_project_id
 NEXT_PUBLIC_ENABLE_TESTNETS=true
 
-# Pinata IPFS configuration
-PINATA_API_KEY=your_pinata_api_key
-PINATA_SECRET_API_KEY=your_pinata_secret_key
-PINATA_JWT=your_pinata_jwt_token (optional)
-NEXT_PUBLIC_GATEWAY_URL=https://gateway.pinata.cloud/ipfs/
+NEXT_PUBLIC_PINATA_JWT=your_pinata_jwt_token
+NEXT_PUBLIC_GATEWAY_URL=your_gateway_url
+
+# Server configuration
+PORT=3456
 ```
 
 ## IPFS Functionality

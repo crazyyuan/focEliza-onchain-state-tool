@@ -1,2 +1,3 @@
-export const AGENT_REGISTRY_ADDRESS =
-  "0xCB9083eDC37Ff80Cd321249Fe692068b329c453f";
+export type Address = `0x${string[40]}`;
+export const AGENT_REGISTRY_ADDRESS = process.env
+  .NEXT_PUBLIC_AGENT_REGISTRY as Address;
