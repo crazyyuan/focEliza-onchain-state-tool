@@ -56,10 +56,6 @@ const Home: NextPage = () => {
   // const [selectedAgentInfo, setSelectedAgentInfo] = useState<any>(null);
   // const [isLoadingAgentInfo, setIsLoadingAgentInfo] = useState(false);
 
-  const [envs, setEnvs] = useState<{ key: string; value: string }[]>([
-    { key: "", value: "" },
-  ]);
-
   const [isRegisterDialogOpen, setIsRegisterDialogOpen] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [isSpaceEnvDialogOpen, setIsSpaceEnvDialogOpen] = useState(false);
@@ -255,122 +251,6 @@ const Home: NextPage = () => {
     }
   };
 
-  const handleAddEnv = () => {
-    setEnvs([...envs, { key: "", value: "" }]);
-  };
-
-  const handleRemoveEnv = (index: number) => {
-    const newEnvs = [...envs];
-    newEnvs.splice(index, 1);
-    setEnvs(newEnvs);
-  };
-
-  const handleEnvChange = (index: number, key: string, value: string) => {
-    const newEnvs = [...envs];
-    newEnvs[index] = { key, value };
-    setEnvs(newEnvs);
-  };
-
-  const handleSetSpaceEnvs = async () => {
-    if (!selectedSpace) {
-      toast.error("Please select a space first");
-      return;
-    }
-
-    // Filter out empty entries and prepare arrays
-    const validEnvs = envs.filter(
-      (env) => env.key.trim() !== "" && env.value.trim() !== "",
-    );
-
-    if (validEnvs.length === 0) {
-      toast.error(
-        "Please add at least one environment variable with key and value",
-      );
-      return;
-    }
-
-    const keys = validEnvs.map((env) => env.key.trim());
-    const values = validEnvs.map((env) => env.value.trim());
-
-    const id = toast.loading("Setting space environment variables...");
-    try {
-      const hash = await writeContract(config, {
-        abi: AGENT_REGISTRY_ABI,
-        address: AGENT_REGISTRY_ADDRESS,
-        functionName: "setSpaceEnvs",
-        args: [selectedSpace, keys, values],
-      });
-
-      const transactionReceipt = await waitForTransactionReceipt(config, {
-        confirmations: 1,
-        hash,
-      });
-      console.log("transactionReceipt", transactionReceipt);
-
-      setEnvs([{ key: "", value: "" }]);
-
-      toast.success("Space environment variables set successfully!", {
-        id: id,
-      });
-
-      await refreshAgentData(selectedSpace);
-    } catch (error: any) {
-      toast.error(`Setting space envs failed: ${error.message}`, {
-        id: id,
-      });
-      console.error("Setting space envs failed:", error);
-    } finally {
-    }
-  };
-
-  const handleSetAgentEnvs = async () => {
-    if (!selectedAgent) {
-      toast.error("Please select an agent first");
-      return;
-    }
-
-    // Filter out empty entries and prepare arrays
-    const validEnvs = envs.filter(
-      (env) => env.key.trim() !== "" && env.value.trim() !== "",
-    );
-
-    if (validEnvs.length === 0) {
-      toast.error(
-        "Please add at least one environment variable with key and value",
-      );
-      return;
-    }
-
-    const keys = validEnvs.map((env) => env.key.trim());
-    const values = validEnvs.map((env) => env.value.trim());
-
-    const id = toast.loading("Setting agent environment variables...");
-    try {
-      const hash = await writeContract(config, {
-        abi: AGENT_ABI,
-        address: selectedAgent.deploy as `0x${string}`,
-        functionName: "setEnvs",
-        args: [keys, values],
-      });
-
-      const transactionReceipt = waitForTransactionReceipt(config, {
-        confirmations: 1,
-        hash,
-      });
-      console.log("transactionReceipt", transactionReceipt);
-
-      toast.success("Agent environment variables set successfully!", {
-        id,
-      });
-
-      setEnvs([{ key: "", value: "" }]);
-    } catch (error: any) {
-      toast.error(`Setting agent envs failed: ${error.message}`, { id });
-      console.error("Setting agent envs failed:", error);
-    } finally {
-    }
-  };
-
   const triggerFileInput = () => {
     if (fileInputRef.current) {
       fileInputRef.current.click();
@@ -484,6 +364,8 @@ const Home: NextPage = () => {
                     <button
                       className={styles.manageButton}
                       onClick={() => setIsSpaceEnvDialogOpen(true)}
+                      disabled={!selectedSpace}
+                      title={!selectedSpace ? "Please select a space first" : "Manage space environment variables"}
                     >
                       Manage Envs
                     </button>
@@ -572,6 +454,8 @@ const Home: NextPage = () => {
                     <button
                       className={styles.manageButton}
                       onClick={() => setIsAgentEnvDialogOpen(true)}
+                      disabled={!selectedAgent}
+                      title={!selectedAgent ? "Please select an agent first" : "Manage agent environment variables"}
                     >
                       Manage Envs
                     </button>
@@ -595,22 +479,14 @@ const Home: NextPage = () => {
         isOpen={isSpaceEnvDialogOpen}
         onClose={() => setIsSpaceEnvDialogOpen(false)}
         selectedSpace={selectedSpace}
-        envs={envs}
-        handleEnvChange={handleEnvChange}
-        handleRemoveEnv={handleRemoveEnv}
-        handleAddEnv={handleAddEnv}
-        handleSetSpaceEnvs={handleSetSpaceEnvs}
+        onEnvsUpdated={refreshAgentData.bind(null, selectedSpace)}
       />
 
       <AgentEnvDialog
         isOpen={isAgentEnvDialogOpen}
         onClose={() => setIsAgentEnvDialogOpen(false)}
         selectedAgent={selectedAgent}
-        envs={envs}
-        handleEnvChange={handleEnvChange}
-        handleRemoveEnv={handleRemoveEnv}
-        handleAddEnv={handleAddEnv}
-        handleSetAgentEnvs={handleSetAgentEnvs}
+        onEnvsUpdated={refreshAgentData.bind(null, selectedSpace)}
       />
 
       <Dialog open={isRegisterDialogOpen} onClose={closeRegisterDialog}>

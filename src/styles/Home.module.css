@@ -134,7 +134,8 @@
 }
 
 .form button, .actionButton {
-  padding: 0.75rem;
+  padding: 0.5rem 0.75rem;
+  margin-left: 1rem;
   background-color: #0070f3;
   color: white;
   border: none;
@@ -189,10 +190,28 @@
 
 .envRow {
   display: flex;
-  flex-direction: row;
-  gap: 0.75rem;
-  margin-bottom: 0.75rem;
+  margin-bottom: 10px;
   align-items: center;
+}
+
+.envRowNumber {
+  flex: 0 0 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  color: #666;
+  margin-right: 5px;
+}
+
+.envTableCellSmall {
+  flex: 0 0 40px;
+  padding: 8px;
+  text-align: center;
+  font-weight: bold;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .envRow button {
@@ -277,6 +296,16 @@
 
 .manageButton:hover {
   background-color: #096dd9;
+}
+
+.manageButton:disabled {
+  background-color: #cccccc;
+  color: #666666;
+  cursor: not-allowed;
+}
+
+.manageButton:disabled:hover {
+  background-color: #cccccc;
 }
 
 .previewLink {
@@ -706,4 +735,229 @@
     padding: 0.5rem;
     font-size: 0.9rem;
   }
+}
+
+/* Environment variables display styles */
+.envDisplaySection {
+  margin-bottom: 1rem;
+  padding: 1rem;
+  background-color: #f8f9fa;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+/* Filter controls */
+.filterControls {
+  margin-bottom: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.searchInput {
+  padding: 0.5rem;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 0.9rem;
+  width: 100%;
+}
+
+.categoryFilter {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.categoryButton {
+  padding: 0.4rem 0.8rem;
+  background-color: #f0f0f0;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.categoryButton:hover {
+  background-color: #e0e0e0;
+}
+
+.activeCategoryButton {
+  background-color: #1890ff;
+  color: white;
+  border-color: #1890ff;
+}
+
+.activeCategoryButton:hover {
+  background-color: #096dd9;
+}
+
+/* File upload section */
+.fileUploadSection {
+  margin-bottom: 1.5rem;
+  padding: 1rem;
+  background-color: #f0f7ff;
+  border-radius: 8px;
+  border: 1px dashed #91caff;
+}
+
+.uploadInstructions {
+  margin-bottom: 0.75rem;
+  font-size: 0.9rem;
+  color: #555;
+}
+
+.fileInputWrapper {
+  display: flex;
+  align-items: center;
+  margin-bottom: 0.75rem;
+}
+
+.fileInput {
+  width: 0.1px;
+  height: 0.1px;
+  opacity: 0;
+  overflow: hidden;
+  position: absolute;
+  z-index: -1;
+}
+
+.fileInputLabel {
+  padding: 0.5rem 1rem;
+  background-color: #1890ff;
+  color: white;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: background-color 0.2s;
+  margin-right: 1rem;
+}
+
+.fileInputLabel:hover {
+  background-color: #096dd9;
+}
+
+.fileInputText {
+  font-size: 0.9rem;
+  color: #666;
+}
+
+.exampleNote {
+  font-size: 0.8rem;
+  color: #888;
+  margin-top: 0.5rem;
+}
+
+.exampleNote code {
+  background-color: #f0f0f0;
+  padding: 0.2rem 0.4rem;
+  border-radius: 3px;
+  font-family: monospace;
+}
+
+.envTableContainer {
+  max-height: 300px;
+  overflow-y: auto;
+  margin-bottom: 1rem;
+  padding-right: 0.5rem;
+}
+
+.envTable {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 1rem;
+  border: 1px solid #e8e8e8;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.envTableHeader {
+  display: flex;
+  background-color: #f0f0f0;
+  font-weight: 600;
+  border-bottom: 2px solid #e8e8e8;
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+.envTableBody {
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.envTableRow {
+  display: flex;
+  border-bottom: 1px solid #e8e8e8;
+}
+
+.envTableRow:last-child {
+  border-bottom: none;
+}
+
+.envTableCell {
+  flex: 1;
+  padding: 0.75rem 1rem;
+  word-break: break-word;
+}
+
+.envTableRow:hover {
+  background-color: #f5f5f5;
+}
+
+.loadingIndicator {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100px;
+  font-style: italic;
+  color: #888;
+}
+
+.noEnvsMessage {
+  padding: 1rem;
+  color: #666;
+  font-style: italic;
+  text-align: center;
+}
+
+.removeButton {
+  padding: 0.5rem;
+  background-color: #ff4d4f;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: background-color 0.3s ease;
+  flex-shrink: 0;
+}
+
+.removeButton:hover {
+  background-color: #ff7875;
+}
+
+/* Modal styles enhancement */
+
+.clearButton {
+  padding: 0.5rem 0.75rem;
+  margin-left: 1.5rem;
+  background-color: #ff4d4f;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: background-color 0.3s ease;
+  margin-right: 0.5rem;
+}
+
+.clearButton:hover {
+  background-color: #ff7875;
+}
+
+.clearButton:disabled {
+  background-color: #ffccc7;
+  color: #d9d9d9;
+  cursor: not-allowed;
 }
