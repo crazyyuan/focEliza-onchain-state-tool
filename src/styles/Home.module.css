@@ -308,6 +308,16 @@
   background-color: #cccccc;
 }
 
+.disabledButton {
+  background-color: #cccccc !important;
+  color: #666666 !important;
+  cursor: not-allowed !important;
+}
+
+.disabledButton:hover {
+  background-color: #cccccc !important;
+}
+
 .previewLink {
   margin-top: 0.5rem;
   font-size: 0.9rem;

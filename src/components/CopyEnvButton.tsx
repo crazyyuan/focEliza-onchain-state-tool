@@ -14,7 +14,8 @@ const CopyEnvButton: React.FC<CopyEnvButtonProps> = ({ selectedSpace, selectedAg
   const envContent = `ON_CHAIN_STATE_AGENT_REGISTER=${AGENT_REGISTRY_ADDRESS}
 ON_CHAIN_STATE_AGENT_SPACE=${selectedSpace}
 ON_CHAIN_STATE_AGENT_IDS=${selectedAgentId}
-ON_CHAIN_STATE_RPC=https://optimism-sepolia.gateway.tenderly.co`;
+ON_CHAIN_STATE_RPC=https://optimism-sepolia.gateway.tenderly.co
+ON_CHAIN_STATE_DOMAIN=${window.location.origin}/api`;
 
   const handleCopy = async () => {
     try {

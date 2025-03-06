@@ -3,6 +3,7 @@ import { ApiResponse } from "./api";
 import fs from "fs";
 
 const API_BASE_URL = "/api";
+const AGENT_CLIENT_HOST = process.env.NEXT_PUBLIC_AGENT_CLIENT_HOST || "";
 
 async function fetchAPI<T>(
   endpoint: string,
@@ -37,6 +38,30 @@ export const apiClient = {
     fetchAPI<string[]>(`/agents?space=${space}&start=${start}&limit=${limit}`),
 
   getAgentDetails: (address: string) => fetchAPI<any>(`/agents/${address}`),
+
+  // Get agent wallet address from the agent client
+  getAgentWalletAddress: async () => {
+    try {
+      if (!process.env.NEXT_PUBLIC_AGENT_CLIENT_HOST) {
+        throw new Error("NEXT_PUBLIC_AGENT_CLIENT_HOST is not defined");
+      }
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_AGENT_CLIENT_HOST}/onchainstate/getWalletAddress`,
+      );
+
+      if (!response.ok) {
+        throw new Error(
+          `Failed to fetch wallet address: ${response.statusText}`,
+        );
+      }
+
+      const result = await response.json();
+      return result.data;
+    } catch (error) {
+      console.error("Error fetching agent wallet address:", error);
+      throw error;
+    }
+  },
 
   // Spaces
   getSpaces: (creator: string, start = 0, limit = 100) =>

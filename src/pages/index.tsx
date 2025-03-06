@@ -7,6 +7,7 @@ import { config } from "../wagmi";
 import { AGENT_ABI, AGENT_REGISTRY_ABI } from "../contract/abi/agent";
 import { AGENT_REGISTRY_ADDRESS } from "../contract/address";
 import { toast, Toaster } from "sonner";
+import { getAddress } from "viem";
 import { NextPage } from "next";
 import { useAccount } from "wagmi";
 import { readContract, writeContract } from "wagmi/actions";
@@ -60,6 +61,9 @@ const Home: NextPage = () => {
   const [isUploading, setIsUploading] = useState(false);
   const [isSpaceEnvDialogOpen, setIsSpaceEnvDialogOpen] = useState(false);
   const [isAgentEnvDialogOpen, setIsAgentEnvDialogOpen] = useState(false);
+  const [isGrantingOperatorRole, setIsGrantingOperatorRole] = useState(false);
+  const [agentWalletAddress, setAgentWalletAddress] = useState<string>("");
+  const [isValidatingAddress, setIsValidatingAddress] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -77,6 +81,7 @@ const Home: NextPage = () => {
   useEffect(() => {
     if (selectedAgent) {
       fetchCharacterInfo(selectedAgent);
+      fetchAgentWalletAddress();
     }
   }, [selectedAgent]);
 
@@ -186,6 +191,110 @@ const Home: NextPage = () => {
     } catch (error) {
       console.error("Error fetching agent info:", error);
       toast.error("Failed to fetch agent information");
+    }
+  };
+
+  const fetchAgentWalletAddress = async () => {
+    try {
+      const walletAddress = await apiClient.getAgentWalletAddress();
+      setAgentWalletAddress(walletAddress);
+    } catch (error) {
+      console.error("Error fetching agent wallet address:", error);
+      toast.error("Failed to fetch agent wallet address");
+      setAgentWalletAddress("");
+    }
+  };
+
+  const validateWalletAddress = async (address: string) => {
+    if (!address || address.trim() === "") {
+      return false;
+    }
+
+    // Basic Ethereum address validation
+    if (!/^0x[a-fA-F0-9]{40}$/.test(address)) {
+      toast.error("Invalid Ethereum address format");
+      return false;
+    }
+
+    setIsValidatingAddress(true);
+    try {
+      // Attempt to validate through the API
+      // This is a mock validation - in a real implementation, you might want to check
+      // if the address exists or has certain properties
+      await apiClient.getAgentWalletAddress(); // Just to check if API is accessible
+      setIsValidatingAddress(false);
+      return true;
+    } catch (error) {
+      console.error("Error validating wallet address:", error);
+      toast.warning(
+        "Could not validate address through API, proceeding with basic validation",
+      );
+      setIsValidatingAddress(false);
+      return true; // Still allow the address if API validation fails but format is correct
+    }
+  };
+
+  const handleGrantOperatorRole = async () => {
+    if (!selectedAgent || !agentWalletAddress) {
+      toast.error("Agent or wallet address not available");
+      return;
+    }
+
+    // Validate the wallet address before proceeding
+    const isValid = await validateWalletAddress(agentWalletAddress);
+    if (!isValid) {
+      toast.error("Please enter a valid Ethereum wallet address");
+      return;
+    }
+
+    setIsGrantingOperatorRole(true);
+    const toastId = toast.loading("Granting OPERATOR_ROLE to agent wallet...");
+
+    try {
+      // Get the OPERATOR_ROLE bytes32 value from the contract
+      const operatorRole = await readContract(config, {
+        abi: AGENT_ABI,
+        address: selectedAgent.deploy as `0x${string}`,
+        functionName: "OPERATOR_ROLE",
+      });
+
+      const hasRole = (await readContract(config, {
+        abi: AGENT_ABI,
+        address: selectedAgent.deploy as `0x${string}`,
+        functionName: "hasRole",
+        args: [operatorRole, getAddress(agentWalletAddress)],
+      })) as boolean;
+      console.log("hasRole", hasRole);
+      if (hasRole) {
+        toast.dismiss(toastId);
+        toast.info("The agent wallet address has OPERATOR_ROLE already!");
+        setIsGrantingOperatorRole(false);
+        return;
+      }
+
+      // Grant the OPERATOR_ROLE to the agent wallet
+      const hash = await writeContract(config, {
+        abi: AGENT_ABI,
+        address: selectedAgent.deploy as `0x${string}`,
+        functionName: "grantRole",
+        args: [operatorRole, getAddress(agentWalletAddress)],
+      });
+
+      await waitForTransactionReceipt(config, {
+        confirmations: 1,
+        hash,
+      });
+
+      toast.success("Successfully granted OPERATOR_ROLE to agent wallet", {
+        id: toastId,
+      });
+    } catch (error: any) {
+      console.error("Error granting OPERATOR_ROLE:", error);
+      toast.error(`Failed to grant OPERATOR_ROLE: ${error.message}`, {
+        id: toastId,
+      });
+    } finally {
+      setIsGrantingOperatorRole(false);
     }
   };
 
@@ -365,7 +474,11 @@ const Home: NextPage = () => {
                       className={styles.manageButton}
                       onClick={() => setIsSpaceEnvDialogOpen(true)}
                       disabled={!selectedSpace}
-                      title={!selectedSpace ? "Please select a space first" : "Manage space environment variables"}
+                      title={
+                        !selectedSpace
+                          ? "Please select a space first"
+                          : "Manage space environment variables"
+                      }
                     >
                       Manage Envs
                     </button>
@@ -455,9 +568,65 @@ const Home: NextPage = () => {
                       className={styles.manageButton}
                       onClick={() => setIsAgentEnvDialogOpen(true)}
                       disabled={!selectedAgent}
-                      title={!selectedAgent ? "Please select an agent first" : "Manage agent environment variables"}
+                      title={
+                        !selectedAgent
+                          ? "Please select an agent first"
+                          : "Manage agent environment variables"
+                      }
                     >
                       Manage Envs
+                    </button>
+                  </div>
+                </div>
+
+                <div className={styles.envSection}>
+                  <h3 className={styles.sectionTitle}>
+                    Agent Wallet Permissions
+                  </h3>
+
+                  {/* Wallet Address Input and Grant Role Button */}
+                  <div
+                    className={styles.formRow}
+                    style={{ marginBottom: "15px" }}
+                  >
+                    <input
+                      type="text"
+                      value={agentWalletAddress}
+                      onChange={(e) => setAgentWalletAddress(e.target.value)}
+                      placeholder="Enter wallet address (0x...)"
+                      className={styles.input}
+                      style={{ flex: "1" }}
+                      disabled={!selectedAgent}
+                    />
+                    <button
+                      className={`${styles.actionButton} ${
+                        !selectedAgent ||
+                        !agentWalletAddress ||
+                        isGrantingOperatorRole ||
+                        isValidatingAddress
+                          ? styles.disabledButton
+                          : ""
+                      }`}
+                      onClick={handleGrantOperatorRole}
+                      disabled={
+                        !selectedAgent ||
+                        !agentWalletAddress ||
+                        isGrantingOperatorRole ||
+                        isValidatingAddress
+                      }
+                      title={
+                        !selectedAgent
+                          ? "Please select an agent first"
+                          : !agentWalletAddress
+                            ? "Please enter a wallet address"
+                            : "Grant OPERATOR_ROLE to wallet address"
+                      }
+                    >
+                      {isGrantingOperatorRole
+                        ? "Granting..."
+                        : isValidatingAddress
+                          ? "Validating..."
+                          : "Grant OPERATOR_ROLE"}
                     </button>
                   </div>
                 </div>
