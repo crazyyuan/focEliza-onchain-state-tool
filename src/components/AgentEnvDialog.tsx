@@ -225,8 +225,10 @@ const AgentEnvDialog: React.FC<AgentEnvDialogProps> = ({
     }
   };
 
+
+
   const handleAddEnv = () => {
-    // Check if we've reached the limit of 10 environment variables
+    // Check if we've reached the limit of environment variables
     if (envs.length >= limit) {
       toast.warning(
         `You can only have up to ${limit} environment variables. Please remove some before adding more.`,
@@ -509,6 +511,8 @@ const AgentEnvDialog: React.FC<AgentEnvDialogProps> = ({
                 <button onClick={handleAddEnv} className={styles.addButton}>
                   Add Environment Variable
                 </button>
+                
+
 
                 <button onClick={handleClearAll} className={styles.clearButton}>
                   Clear All
