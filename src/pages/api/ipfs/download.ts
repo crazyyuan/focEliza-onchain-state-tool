@@ -19,7 +19,8 @@ export default async function handler(
 
   try {
     // Create cache directory if it doesn't exist
-    const cacheDir = path.join(process.cwd(), "ipfs-cache");
+    const cacheDir = path.join("/tmp", "ipfs-cache");
+    console.log('cacheDir:', cacheDir);
     if (!fs.existsSync(cacheDir)) {
       fs.mkdirSync(cacheDir, { recursive: true });
     }

@@ -17,14 +17,19 @@ const CopyEnvButton: React.FC<CopyEnvButtonProps> = ({
 
   // Get the WALLET_SECRET_SALT from localStorage when component mounts or modal opens
   useEffect(() => {
-    if (isModalOpen) {
-      const salt = localStorage.getItem("WALLET_SECRET_SALT");
+    if (isModalOpen && selectedAgentId) {
+      const salt = localStorage.getItem(`WALLET_SECRET_SALT_${selectedAgentId}`);
       setWalletSecretSalt(salt);
     }
-  }, [isModalOpen]);
+  }, [isModalOpen, selectedAgentId]);
 
-  // Generate a random string for WALLET_SECRET_SALT
+  // Generate a random string for WALLET_SECRET_SALT that is unique per agent
   const generateWalletSecretSalt = () => {
+    if (!selectedAgentId) {
+      console.error("Cannot generate wallet secret salt: No agent selected");
+      return;
+    }
+    
     // Generate a random string (32 characters) with letters, numbers, and some special characters
     const characters =
       "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()_-+=<>?";
@@ -37,8 +42,8 @@ const CopyEnvButton: React.FC<CopyEnvButtonProps> = ({
       );
     }
 
-    // Store in localStorage
-    localStorage.setItem("WALLET_SECRET_SALT", result);
+    // Store in localStorage with agent-specific key
+    localStorage.setItem(`WALLET_SECRET_SALT_${selectedAgentId}`, result);
     setWalletSecretSalt(result);
   };
 
