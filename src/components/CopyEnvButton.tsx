@@ -17,16 +17,24 @@ const CopyEnvButton: React.FC<CopyEnvButtonProps> = ({
 
   // Get the WALLET_SECRET_SALT from localStorage when component mounts or modal opens
   useEffect(() => {
-    if (isModalOpen && selectedAgentId) {
-      const salt = localStorage.getItem(`WALLET_SECRET_SALT_${selectedAgentId}`);
-      setWalletSecretSalt(salt);
+    if (isModalOpen) {
+      // For agent-specific salt
+      // if (selectedAgentId) {
+      //   const salt = localStorage.getItem(`WALLET_SECRET_SALT_${selectedAgentId}`);
+      //   setWalletSecretSalt(salt);
+      // }
+      // For space-specific salt
+      if (selectedSpace) {
+        const salt = localStorage.getItem(`WALLET_SECRET_SALT_${selectedSpace}`);
+        setWalletSecretSalt(salt);
+      }
     }
-  }, [isModalOpen, selectedAgentId]);
+  }, [isModalOpen, selectedAgentId, selectedSpace]);
 
-  // Generate a random string for WALLET_SECRET_SALT that is unique per agent
+  // Generate a random string for WALLET_SECRET_SALT that is unique per agent or space
   const generateWalletSecretSalt = () => {
-    if (!selectedAgentId) {
-      console.error("Cannot generate wallet secret salt: No agent selected");
+    if (!selectedAgentId && !selectedSpace) {
+      console.error("Cannot generate wallet secret salt: No agent or space selected");
       return;
     }
     
@@ -42,8 +50,13 @@ const CopyEnvButton: React.FC<CopyEnvButtonProps> = ({
       );
     }
 
-    // Store in localStorage with agent-specific key
-    localStorage.setItem(`WALLET_SECRET_SALT_${selectedAgentId}`, result);
+    // Store in localStorage with agent-specific or space-specific key
+    // if (selectedAgentId) {
+    //   localStorage.setItem(`WALLET_SECRET_SALT_${selectedAgentId}`, result);
+    // } 
+    if (selectedSpace) {
+      localStorage.setItem(`WALLET_SECRET_SALT_${selectedSpace}`, result);
+    }
     setWalletSecretSalt(result);
   };
 
@@ -57,7 +70,11 @@ ON_CHAIN_STATE_DOMAIN=${window.location.origin}/api`;
   // Full environment variables content (displayed but not copied)
   const displayEnvContent = walletSecretSalt
     ? `${baseEnvContent}
-ON_CHAIN_STATE_WALLET_SECRET_SALT=${walletSecretSalt} (will not be copied)`
+ON_CHAIN_STATE_WALLET_SECRET_SALT=${walletSecretSalt} (will not be copied)
+
+# The salt above is used for encrypting sensitive environment variables.
+# When an environment variable is marked as encrypted, its value will be
+# encrypted using AES with this salt before being stored on the blockchain.`
     : baseEnvContent;
 
   // Content that will actually be copied to clipboard (without WALLET_SECRET_SALT)
@@ -92,14 +109,14 @@ ON_CHAIN_STATE_WALLET_SECRET_SALT=${walletSecretSalt} (will not be copied)`
         <div className={styles.modalOverlay}>
           <div className={styles.modal}>
             <div className={styles.modalHeader}>
-              <h3>Environment Variables for Eliza</h3>
+              <h3>Environment Variables for {selectedAgentId ? "Agent" : "Space"}</h3>
               <button onClick={closeModal} className={styles.closeButton}>
                 &times;
               </button>
             </div>
             <div className={styles.modalContent}>
               <p className={styles.modalDescription}>
-                Copy these environment variables for Eliza development:
+                Copy these environment variables for {selectedAgentId ? "Agent" : "Space"} development:
               </p>
               <pre className={styles.envPreview}>{displayEnvContent}</pre>
               {walletSecretSalt && (
@@ -112,7 +129,7 @@ ON_CHAIN_STATE_WALLET_SECRET_SALT=${walletSecretSalt} (will not be copied)`
                   }}
                 >
                   Note: WALLET_SECRET_SALT will not be copied for security
-                  reasons.
+                  reasons. This salt is used for encrypting sensitive environment variables.
                 </p>
               )}
               <div className={styles.modalActions}>

@@ -6,6 +6,8 @@ import { waitForTransactionReceipt } from "@wagmi/core";
 import { AGENT_ABI } from "../contract/abi/agent";
 import { toast } from "sonner";
 
+var AES = require("crypto-js/aes");
+
 interface AgentEnvDialogProps {
   isOpen: boolean;
   onClose: () => void;
@@ -19,7 +21,7 @@ const AgentEnvDialog: React.FC<AgentEnvDialogProps> = ({
   selectedAgent,
   onEnvsUpdated,
 }) => {
-  const [agentEnvs, setAgentEnvs] = useState<{ key: string; value: string }[]>(
+  const [agentEnvs, setAgentEnvs] = useState<{ key: string; value: string; encrypted?: boolean }[]>(
     [],
   );
   const [loading, setLoading] = useState(false);
@@ -29,8 +31,8 @@ const AgentEnvDialog: React.FC<AgentEnvDialogProps> = ({
   const limit = 10;
 
   // Internal state for form management
-  const [envs, setEnvs] = useState<{ key: string; value: string }[]>([
-    { key: "", value: "" },
+  const [envs, setEnvs] = useState<{ key: string; value: string; encrypted?: boolean }[]>([
+    { key: "", value: "", encrypted: false },
   ]);
 
   // Categories for filtering
@@ -103,15 +105,16 @@ const AgentEnvDialog: React.FC<AgentEnvDialogProps> = ({
 
     setLoading(true);
     try {
-      const [keys, values] = (await readContract(config, {
+      const [keys, values, encryptedFlags] = (await readContract(config, {
         abi: AGENT_ABI,
         address: selectedAgent.deploy as `0x${string}`,
         functionName: "getAllEnvs",
-      })) as [string[], string[]];
+      })) as [string[], string[], boolean[]];
 
       const envData = keys.map((key, index) => ({
         key,
         value: values[index],
+        encrypted: encryptedFlags ? encryptedFlags[index] : false,
       }));
 
       setAgentEnvs(envData);
@@ -134,7 +137,7 @@ const AgentEnvDialog: React.FC<AgentEnvDialogProps> = ({
 
       // Parse .env file content
       const lines = content.split("\n");
-      const tempEnvs: { key: string; value: string }[] = [];
+      const tempEnvs: { key: string; value: string; encrypted?: boolean }[] = [];
       const uniqueKeys = new Set<string>();
       let duplicateCount = 0;
       let existingCount = 0;
@@ -180,10 +183,21 @@ const AgentEnvDialog: React.FC<AgentEnvDialogProps> = ({
 
           // Add the key to the set of unique keys
           uniqueKeys.add(key);
+          
+          // Detect potentially sensitive variables that should be encrypted
+          const sensitiveKeywords = [
+            'key', 'secret', 'password', 'token', 'auth', 'credential', 'private', 
+            'apikey', 'api_key', 'access', 'cert', 'jwt', 'encrypt'
+          ];
+          
+          // Check if the key contains any sensitive keywords (case insensitive)
+          const shouldEncrypt = sensitiveKeywords.some(keyword => 
+            key.toLowerCase().includes(keyword.toLowerCase())
+          );
 
           // Add the key-value pair if we haven't reached the limit
           if (tempEnvs.length < limit) {
-            tempEnvs.push({ key, value });
+            tempEnvs.push({ key, value, encrypted: shouldEncrypt });
           } else {
             limitExceeded = true;
           }
@@ -194,6 +208,15 @@ const AgentEnvDialog: React.FC<AgentEnvDialogProps> = ({
 
       let successMessage = `Loaded ${tempEnvs.length} environment variables from file`;
       let details = [];
+      
+      // Count how many variables were automatically marked for encryption
+      const encryptedCount = tempEnvs.filter(env => env.encrypted).length;
+      
+      if (encryptedCount > 0) {
+        details.push(`${encryptedCount} sensitive variables marked for encryption`);
+        // Show a separate toast about encryption detection
+        toast.info(`${encryptedCount} potentially sensitive variables were automatically marked for encryption. You can toggle encryption for each variable if needed.`);
+      }
 
       if (duplicateCount > 0) {
         details.push(`${duplicateCount} duplicates removed`);
@@ -247,7 +270,7 @@ const AgentEnvDialog: React.FC<AgentEnvDialogProps> = ({
       return;
     }
 
-    setEnvs([...envs, { key: "", value: "" }]);
+    setEnvs([...envs, { key: "", value: "", encrypted: false }]);
   };
 
   const handleRemoveEnv = (index: number) => {
@@ -256,7 +279,7 @@ const AgentEnvDialog: React.FC<AgentEnvDialogProps> = ({
     setEnvs(newEnvs);
   };
 
-  const handleEnvChange = (index: number, key: string, value: string) => {
+  const handleEnvChange = (index: number, key: string, value: string, encrypted?: boolean) => {
     const newEnvs = [...envs];
 
     // Check if this key already exists in another row
@@ -268,8 +291,79 @@ const AgentEnvDialog: React.FC<AgentEnvDialogProps> = ({
       );
     }
 
-    newEnvs[index] = { key, value };
+    // If encrypted is explicitly provided, use it, otherwise keep the existing value
+    const isEncrypted = encrypted !== undefined ? encrypted : newEnvs[index]?.encrypted || false;
+    newEnvs[index] = { key, value, encrypted: isEncrypted };
     setEnvs(newEnvs);
+  };
+
+  const handleToggleEncryption = (index: number) => {
+    const newEnvs = [...envs];
+    const currentEnv = newEnvs[index];
+    const newEncrypted = !currentEnv.encrypted;
+    
+    newEnvs[index] = { ...currentEnv, encrypted: newEncrypted };
+    setEnvs(newEnvs);
+    
+    // Show feedback to user when toggling encryption
+    if (newEncrypted) {
+      // Check if encryption salt exists
+      const salt = localStorage.getItem('WALLET_SECRET_SALT_AGENT');
+      if (!salt) {
+        // Generate a new salt if one doesn't exist
+        const newSalt = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+        localStorage.setItem('WALLET_SECRET_SALT_AGENT', newSalt);
+        toast.success("Encryption enabled! A new encryption key has been generated and saved to your browser.");
+      } else {
+        toast.success("Encryption enabled for this variable");
+      }
+    } else {
+      toast.info("Encryption disabled for this variable");
+    }
+  };
+  
+  // Function to encrypt all environment variables at once
+  const handleEncryptAll = () => {
+    // Skip if no environment variables or only empty ones
+    if (envs.length === 0 || (envs.length === 1 && envs[0].key === "")) {
+      toast.info("No environment variables to encrypt");
+      return;
+    }
+    
+    const newEnvs = envs.map(env => ({
+      ...env,
+      encrypted: env.key !== "" ? true : false // Only encrypt non-empty rows
+    }));
+    
+    setEnvs(newEnvs);
+    
+    // Check if encryption salt exists
+    const salt = localStorage.getItem('WALLET_SECRET_SALT_AGENT');
+    if (!salt) {
+      // Generate a new salt if one doesn't exist
+      const newSalt = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+      localStorage.setItem('WALLET_SECRET_SALT_AGENT', newSalt);
+      toast.success("All variables encrypted! A new encryption key has been generated and saved to your browser.");
+    } else {
+      toast.success("All variables are now encrypted");
+    }
+  };
+  
+  // Function to decrypt all environment variables at once
+  const handleDecryptAll = () => {
+    // Skip if no environment variables or only empty ones
+    if (envs.length === 0 || (envs.length === 1 && envs[0].key === "")) {
+      toast.info("No environment variables to decrypt");
+      return;
+    }
+    
+    const newEnvs = envs.map(env => ({
+      ...env,
+      encrypted: false
+    }));
+    
+    setEnvs(newEnvs);
+    toast.info("All variables are now unencrypted");
   };
 
   const handleSetAgentEnvs = async () => {
@@ -308,7 +402,21 @@ const AgentEnvDialog: React.FC<AgentEnvDialogProps> = ({
     }
 
     const keys = uniqueEnvs.map((env) => env.key.trim());
-    const values = uniqueEnvs.map((env) => env.value.trim());
+    const values = uniqueEnvs.map((env) => {
+      // If the value should be encrypted, encrypt it using the wallet secret salt
+      if (env.encrypted) {
+        // Get the agent-specific salt from localStorage
+        const salt = localStorage.getItem(`WALLET_SECRET_SALT_${selectedAgent.id}`);
+        if (!salt) {
+          toast.error("No encryption salt found. Please generate one first.");
+          throw new Error("No encryption salt found");
+        }
+        // Encrypt the value using AES with the salt
+        return AES.encrypt(env.value.trim(), salt).toString();
+      }
+      return env.value.trim();
+    });
+    const encryptedFlags = uniqueEnvs.map((env) => env.encrypted || false);
 
     const id = toast.loading("Setting agent environment variables...");
     try {
@@ -316,7 +424,7 @@ const AgentEnvDialog: React.FC<AgentEnvDialogProps> = ({
         abi: AGENT_ABI,
         address: selectedAgent.deploy as `0x${string}`,
         functionName: "setEnvs",
-        args: [keys, values],
+        args: [keys, values, encryptedFlags],
       });
 
       const transactionReceipt = await waitForTransactionReceipt(config, {
@@ -329,7 +437,7 @@ const AgentEnvDialog: React.FC<AgentEnvDialogProps> = ({
         id,
       });
 
-      setEnvs([{ key: "", value: "" }]);
+      setEnvs([{ key: "", value: "", encrypted: false }]);
 
       // Refresh the agent envs
       await fetchAgentEnvs();
@@ -381,6 +489,7 @@ const AgentEnvDialog: React.FC<AgentEnvDialogProps> = ({
         </div>
 
         <div className={styles.modalContent}>
+
           {/* Current agent envs display */}
           <div className={styles.envDisplaySection}>
             <h3 className={styles.sectionTitle}>
@@ -422,6 +531,7 @@ const AgentEnvDialog: React.FC<AgentEnvDialogProps> = ({
                     <div className={styles.envTableCellSmall}>#</div>
                     <div className={styles.envTableCell}>Key</div>
                     <div className={styles.envTableCell}>Value</div>
+                    <div className={styles.envTableCellSmall}>Encrypted</div>
                   </div>
                   <div className={styles.envTableBody}>
                     {filteredEnvs.map((env, index) => (
@@ -430,7 +540,20 @@ const AgentEnvDialog: React.FC<AgentEnvDialogProps> = ({
                           {index + 1}
                         </div>
                         <div className={styles.envTableCell}>{env.key}</div>
-                        <div className={styles.envTableCell}>{env.value}</div>
+                        <div className={styles.envTableCell}>
+                          {env.encrypted ? (
+                            <span className={styles.encryptedValue}>********</span>
+                          ) : (
+                            env.value
+                          )}
+                        </div>
+                        <div className={styles.envTableCellSmall}>
+                          {env.encrypted ? (
+                            <span className={styles.encryptedValue}>Yes</span>
+                          ) : (
+                            "No"
+                          )}
+                        </div>
                       </div>
                     ))}
                   </div>
@@ -471,9 +594,6 @@ const AgentEnvDialog: React.FC<AgentEnvDialogProps> = ({
                 </label>
                 <span className={styles.fileInputText}>No file chosen</span>
               </div>
-              <p className={styles.exampleNote}>
-                Refer to <code>envs.example</code> file for the expected format.
-              </p>
             </div>
 
             <div className={styles.envForm}>
@@ -485,7 +605,7 @@ const AgentEnvDialog: React.FC<AgentEnvDialogProps> = ({
                     placeholder="Key"
                     value={env.key}
                     onChange={(e) =>
-                      handleEnvChange(index, e.target.value, env.value)
+                      handleEnvChange(index, e.target.value, env.value, env.encrypted)
                     }
                     className={styles.envInput}
                   />
@@ -494,10 +614,32 @@ const AgentEnvDialog: React.FC<AgentEnvDialogProps> = ({
                     placeholder="Value"
                     value={env.value}
                     onChange={(e) =>
-                      handleEnvChange(index, env.key, e.target.value)
+                      handleEnvChange(index, env.key, e.target.value, env.encrypted)
                     }
                     className={styles.envInput}
                   />
+                  <div className={styles.encryptToggle}>
+                    <label className={styles.encryptLabel}>
+                      <input
+                        type="checkbox"
+                        checked={env.encrypted || false}
+                        onChange={() => handleToggleEncryption(index)}
+                        className={styles.encryptCheckbox}
+                      />
+                      {env.encrypted ? (
+                        <span className={styles.encryptedValue}>Encrypted</span>
+                      ) : (
+                        "Encrypt"
+                      )}
+                      <div className={styles.encryptTooltip}>
+                        <span className={styles.tooltipText}>
+                          {env.encrypted
+                            ? "This value will be encrypted before storing on the blockchain"
+                            : "Toggle to encrypt this sensitive value"}
+                        </span>
+                      </div>
+                    </label>
+                  </div>
                   <button
                     onClick={() => handleRemoveEnv(index)}
                     className={styles.removeButton}
@@ -511,8 +653,6 @@ const AgentEnvDialog: React.FC<AgentEnvDialogProps> = ({
                 <button onClick={handleAddEnv} className={styles.addButton}>
                   Add Environment Variable
                 </button>
-                
-
 
                 <button onClick={handleClearAll} className={styles.clearButton}>
                   Clear All

@@ -6,6 +6,7 @@ import { waitForTransactionReceipt } from "@wagmi/core";
 import { AGENT_REGISTRY_ABI } from "../contract/abi/agent";
 import { AGENT_REGISTRY_ADDRESS } from "../contract/address";
 import { toast } from "sonner";
+var AES = require("crypto-js/aes");
 
 interface SpaceEnvDialogProps {
   isOpen: boolean;
@@ -20,7 +21,7 @@ const SpaceEnvDialog: React.FC<SpaceEnvDialogProps> = ({
   selectedSpace,
   onEnvsUpdated,
 }) => {
-  const [spaceEnvs, setSpaceEnvs] = useState<{ key: string; value: string }[]>(
+  const [spaceEnvs, setSpaceEnvs] = useState<{ key: string; value: string; encrypted?: boolean }[]>(
     [],
   );
   const [loading, setLoading] = useState(false);
@@ -30,8 +31,8 @@ const SpaceEnvDialog: React.FC<SpaceEnvDialogProps> = ({
   const limit = 10;
 
   // Internal state for form management
-  const [envs, setEnvs] = useState<{ key: string; value: string }[]>([
-    { key: "", value: "" },
+  const [envs, setEnvs] = useState<{ key: string; value: string; encrypted?: boolean }[]>([
+    { key: "", value: "", encrypted: false },
   ]);
 
   // Categories for filtering
@@ -104,16 +105,17 @@ const SpaceEnvDialog: React.FC<SpaceEnvDialogProps> = ({
 
     setLoading(true);
     try {
-      const [keys, values] = (await readContract(config, {
+      const [keys, values, encryptedFlags] = (await readContract(config, {
         abi: AGENT_REGISTRY_ABI,
         address: AGENT_REGISTRY_ADDRESS,
         functionName: "getAllSpaceEnvs",
         args: [selectedSpace],
-      })) as [string[], string[]];
+      })) as [string[], string[], boolean[]];
 
       const envData = keys.map((key, index) => ({
         key,
         value: values[index],
+        encrypted: encryptedFlags ? encryptedFlags[index] : false,
       }));
 
       setSpaceEnvs(envData);
@@ -136,7 +138,7 @@ const SpaceEnvDialog: React.FC<SpaceEnvDialogProps> = ({
 
       // Parse .env file content
       const lines = content.split("\n");
-      const tempEnvs: { key: string; value: string }[] = [];
+      const tempEnvs: { key: string; value: string; encrypted?: boolean }[] = [];
       const uniqueKeys = new Set<string>();
       let duplicateCount = 0;
       let existingCount = 0;
@@ -151,6 +153,11 @@ const SpaceEnvDialog: React.FC<SpaceEnvDialogProps> = ({
         if (match) {
           const key = match[1].trim();
           let value = match[2].trim();
+
+          // filter secret salt
+          if (key.includes("ON_CHAIN_STATE_WALLET_SECRET_SALT")) {
+            return;
+          }
 
           // Check if value is commented out (starts with #) or empty
           if (value.startsWith("#") || value === "") {
@@ -183,9 +190,20 @@ const SpaceEnvDialog: React.FC<SpaceEnvDialogProps> = ({
           // Add the key to the set of unique keys
           uniqueKeys.add(key);
 
+          // Detect potentially sensitive variables that should be encrypted
+          const sensitiveKeywords = [
+            'key', 'secret', 'password', 'token', 'auth', 'credential', 'private', 
+            'apikey', 'api_key', 'access', 'cert', 'jwt', 'encrypt'
+          ];
+          
+          // Check if the key contains any sensitive keywords (case insensitive)
+          const shouldEncrypt = sensitiveKeywords.some(keyword => 
+            key.toLowerCase().includes(keyword.toLowerCase())
+          );
+
           // Add the key-value pair if we haven't reached the limit
-          if (tempEnvs.length < 10) {
-            tempEnvs.push({ key, value });
+          if (tempEnvs.length < limit) { // Using 10 as per the environment variable limit
+            tempEnvs.push({ key, value, encrypted: shouldEncrypt });
           } else {
             limitExceeded = true;
           }
@@ -196,6 +214,15 @@ const SpaceEnvDialog: React.FC<SpaceEnvDialogProps> = ({
 
       let successMessage = `Loaded ${tempEnvs.length} environment variables from file`;
       let details = [];
+      
+      // Count how many variables were automatically marked for encryption
+      const encryptedCount = tempEnvs.filter(env => env.encrypted).length;
+      
+      if (encryptedCount > 0) {
+        details.push(`${encryptedCount} sensitive variables marked for encryption`);
+        // Show a separate toast about encryption detection
+        toast.info(`${encryptedCount} potentially sensitive variables were automatically marked for encryption. You can toggle encryption for each variable if needed.`);
+      }
 
       if (duplicateCount > 0) {
         details.push(`${duplicateCount} duplicates removed`);
@@ -241,7 +268,7 @@ const SpaceEnvDialog: React.FC<SpaceEnvDialogProps> = ({
 
   // Handlers for managing the form state
   const handleAddEnv = () => {
-    // Check if we've reached the limit of 10 environment variables
+    // Check if we've reached the limit of environment variables
     if (envs.length >= limit) {
       toast.warning(
         `You can only have up to ${limit} environment variables. Please remove some before adding more.`,
@@ -260,7 +287,7 @@ const SpaceEnvDialog: React.FC<SpaceEnvDialogProps> = ({
       return;
     }
 
-    setEnvs([...envs, { key: "", value: "" }]);
+    setEnvs([...envs, { key: "", value: "", encrypted: false }]);
   };
 
   const handleRemoveEnv = (index: number) => {
@@ -269,7 +296,7 @@ const SpaceEnvDialog: React.FC<SpaceEnvDialogProps> = ({
     setEnvs(newEnvs);
   };
 
-  const handleEnvChange = (index: number, key: string, value: string) => {
+  const handleEnvChange = (index: number, key: string, value: string, encrypted?: boolean) => {
     const newEnvs = [...envs];
 
     // Check if this key already exists in another row
@@ -281,7 +308,18 @@ const SpaceEnvDialog: React.FC<SpaceEnvDialogProps> = ({
       );
     }
 
-    newEnvs[index] = { key, value };
+    // If encrypted is explicitly provided, use it, otherwise keep the existing value
+    const isEncrypted = encrypted !== undefined ? encrypted : newEnvs[index]?.encrypted || false;
+    newEnvs[index] = { key, value, encrypted: isEncrypted };
+    setEnvs(newEnvs);
+  };
+
+  const handleToggleEncryption = (index: number) => {
+    const newEnvs = [...envs];
+    const currentEnv = newEnvs[index];
+    const newEncrypted = !currentEnv.encrypted;
+    
+    newEnvs[index] = { ...currentEnv, encrypted: newEncrypted };
     setEnvs(newEnvs);
   };
 
@@ -333,7 +371,21 @@ const SpaceEnvDialog: React.FC<SpaceEnvDialogProps> = ({
     }
 
     const keys = uniqueEnvs.map((env) => env.key.trim());
-    const values = uniqueEnvs.map((env) => env.value.trim());
+    const values = uniqueEnvs.map((env) => {
+      // If the value should be encrypted, encrypt it using the wallet secret salt
+      if (env.encrypted) {
+        // Get the agent-specific salt from localStorage
+        const salt = localStorage.getItem(`WALLET_SECRET_SALT_${selectedSpace}`);
+        if (!salt) {
+          toast.error("No encryption salt found. Please generate one first.");
+          throw new Error("No encryption salt found");
+        }
+        // Encrypt the value using AES with the salt
+        return AES.encrypt(env.value.trim(), salt).toString();
+      }
+      return env.value.trim();
+    });
+    const encryptedFlags = uniqueEnvs.map((env) => env.encrypted || false);
 
     const id = toast.loading("Setting space environment variables...");
     try {
@@ -341,7 +393,7 @@ const SpaceEnvDialog: React.FC<SpaceEnvDialogProps> = ({
         abi: AGENT_REGISTRY_ABI,
         address: AGENT_REGISTRY_ADDRESS,
         functionName: "setSpaceEnvs",
-        args: [selectedSpace, keys, values],
+        args: [selectedSpace, keys, values, encryptedFlags],
       });
 
       const transactionReceipt = await waitForTransactionReceipt(config, {
@@ -350,7 +402,7 @@ const SpaceEnvDialog: React.FC<SpaceEnvDialogProps> = ({
       });
       console.log("transactionReceipt", transactionReceipt);
 
-      setEnvs([{ key: "", value: "" }]);
+      setEnvs([{ key: "", value: "", encrypted: false }]);
 
       toast.success("Space environment variables set successfully!", {
         id: id,
@@ -425,6 +477,7 @@ const SpaceEnvDialog: React.FC<SpaceEnvDialogProps> = ({
                     <div className={styles.envTableCellSmall}>#</div>
                     <div className={styles.envTableCell}>Key</div>
                     <div className={styles.envTableCell}>Value</div>
+                    <div className={styles.envTableCellSmall}>Encrypted</div>
                   </div>
                   <div className={styles.envTableBody}>
                     {filteredEnvs.map((env, index) => (
@@ -433,7 +486,20 @@ const SpaceEnvDialog: React.FC<SpaceEnvDialogProps> = ({
                           {index + 1}
                         </div>
                         <div className={styles.envTableCell}>{env.key}</div>
-                        <div className={styles.envTableCell}>{env.value}</div>
+                        <div className={styles.envTableCell}>
+                          {env.encrypted ? (
+                            <span className={styles.encryptedValue}>********</span>
+                          ) : (
+                            env.value
+                          )}
+                        </div>
+                        <div className={styles.envTableCellSmall}>
+                          {env.encrypted ? (
+                            <span className={styles.encryptedValue}>Yes</span>
+                          ) : (
+                            "No"
+                          )}
+                        </div>
                       </div>
                     ))}
                   </div>
@@ -474,9 +540,6 @@ const SpaceEnvDialog: React.FC<SpaceEnvDialogProps> = ({
                 </label>
                 <span className={styles.fileInputText}>No file chosen</span>
               </div>
-              <p className={styles.exampleNote}>
-                Refer to <code>envs.example</code> file for the expected format.
-              </p>
             </div>
 
             <div className={styles.envForm}>
@@ -488,7 +551,7 @@ const SpaceEnvDialog: React.FC<SpaceEnvDialogProps> = ({
                     placeholder="Key"
                     value={env.key}
                     onChange={(e) =>
-                      handleEnvChange(index, e.target.value, env.value)
+                      handleEnvChange(index, e.target.value, env.value, env.encrypted)
                     }
                     className={styles.envInput}
                   />
@@ -497,10 +560,32 @@ const SpaceEnvDialog: React.FC<SpaceEnvDialogProps> = ({
                     placeholder="Value"
                     value={env.value}
                     onChange={(e) =>
-                      handleEnvChange(index, env.key, e.target.value)
+                      handleEnvChange(index, env.key, e.target.value, env.encrypted)
                     }
                     className={styles.envInput}
                   />
+                  <div className={styles.encryptToggle}>
+                    <label className={styles.encryptLabel}>
+                      <input
+                        type="checkbox"
+                        checked={env.encrypted || false}
+                        onChange={() => handleToggleEncryption(index)}
+                        className={styles.encryptCheckbox}
+                      />
+                      {env.encrypted ? (
+                        <span className={styles.encryptedValue}>Encrypted</span>
+                      ) : (
+                        "Encrypt"
+                      )}
+                      <div className={styles.encryptTooltip}>
+                        <span className={styles.tooltipText}>
+                          {env.encrypted
+                            ? "This value will be encrypted before storing on the blockchain"
+                            : "Toggle to encrypt this sensitive value"}
+                        </span>
+                      </div>
+                    </label>
+                  </div>
                   <button
                     onClick={() => handleRemoveEnv(index)}
                     className={styles.removeButton}
